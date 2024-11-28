@@ -147,118 +147,103 @@ def tree_to_list(tree, list):
 
 #HTML PARSING
 class HTMLParser:
-    HEAD_TAGS = [
-        "base", "basefont", "bgsound", "noscript",
-        "link", "meta", "title", "style", "script",
-    ]
-
     def __init__(self, body):
-            self.body = body
-            self.unfinished = []
+        self.body = body
+        self.unfinished = []
 
     def parse(self):
-        text = "" # Initialize an empty string to accumulate characters for text or tag content
-        in_tag = False  # Flag to indicate whether we are currently inside a tag
+        text = ""
+        in_tag = False
         for c in self.body:
             if c == "<":
-                 # We've encountered the start of a tag
                 in_tag = True
-                if text:
-                    # If we have accumulated text outside a tag, process it
-                    self.add_text(text)
-                 # Clear the text buffer for new content (either for the tag or upcoming text)
+                if text: self.add_text(text)
                 text = ""
             elif c == ">":
-                # We've encountered the end of a tag
                 in_tag = False
-                # Process the accumulated text as a tag
                 self.add_tag(text)
-                # Clear the text buffer for new content
                 text = ""
             else:
-                 # Accumulate characters for either a tag or text content
                 text += c
-        # If there's remaining text after the loop (not part of a tag), process it as plain text
         if not in_tag and text:
             self.add_text(text)
-        # Finalize parsing, returning or processing the fully parsed content; convert the incomplete tree to the final, complete tree
         return self.finish()
+
+    def get_attributes(self, text):
+        parts = text.split()
+        tag = parts[0].casefold()
+        attributes = {}
+        for attrpair in parts[1:]:
+            if "=" in attrpair:
+                key, value = attrpair.split("=", 1)
+                if len(value) > 2 and value[0] in ["'", "\""]:
+                    value = value[1:-1]
+                attributes[key.casefold()] = value
+            else:
+                attributes[attrpair.casefold()] = ""
+        return tag, attributes
 
     def add_text(self, text):
         if text.isspace(): return
-        text = text.strip()
         self.implicit_tags(None)
         parent = self.unfinished[-1]
         node = Text(text, parent)
         parent.children.append(node)
 
+    SELF_CLOSING_TAGS = [
+        "area", "base", "br", "col", "embed", "hr", "img", "input",
+        "link", "meta", "param", "source", "track", "wbr",
+    ]
+
     def add_tag(self, tag):
         tag, attributes = self.get_attributes(tag)
-        if tag.startswith("!"): return #Ignore comments or doctype declarations
+        if tag.startswith("!"): return
         self.implicit_tags(tag)
+
         if tag.startswith("/"):
-            if len(self.unfinished) == 1: return #account for edge case when there's no unfinished node to add it to
-            # Pop the last unfinished node from the stack; this node is now complete
+            if len(self.unfinished) == 1: return
             node = self.unfinished.pop()
-            # The parent is now the last unfinished node in the stack
             parent = self.unfinished[-1]
-             # Append the finished node to its parent's list of children
-            # This completes the parent-child relationship for the current tag
+            parent.children.append(node)
+        elif tag in self.SELF_CLOSING_TAGS:
+            parent = self.unfinished[-1]
+            node = Element(tag, attributes, parent)
             parent.children.append(node)
         else:
-            parent = self.unfinished[-1] if self.unfinished else None #account for very first open tag as an edge case
-             # Create a new Element node for the open tag, passing the parent for nesting
+            parent = self.unfinished[-1] if self.unfinished else None
             node = Element(tag, attributes, parent)
-            # Add this new node to the unfinished stack, marking it as the current node
-            # This means any subsequent tags or text will be nested inside this new element
             self.unfinished.append(node)
 
-    def get_attributes(self, text):
-        parts = text.split(maxsplit=1)     # Split the input text into parts based on whitespace.
-        tag = parts[0].casefold()          # The first part is assumed to be the tag name, converted to lowercase.
-        attributes = {}                    # Initialize an empty dictionary to hold attribute key-value pairs.
+    HEAD_TAGS = [
+        "base", "basefont", "bgsound", "noscript",
+        "link", "meta", "title", "style", "script",
+    ]
 
-        # Check if there are attributes present
-        if len(parts) > 1:
-            # Use regex to capture key="value" pairs and handle attributes without values.
-            attr_regex = re.compile(r'(\w+)(?:=(["\'])(.*?)\2)?')
-            for match in attr_regex.finditer(parts[1]):
-                key = match.group(1).casefold()  # Attribute name in lowercase
-                value = match.group(3) or True   # If no value, default to True
-                attributes[key] = value
-
-        return tag, attributes # Return the tag name and the dictionary of attributes.
-
-    def finish(self):
-        # if not self.unfinished:
-        #     self.implicit_tags(None)
-        while len(self.unfinished) > 1:
-            node = self.unfinished.pop()
-            parent = self.unfinished[-1]
-            parent.children.append(node)
-
-        root = self.unfinished[0] if self.unfinished else None
-        return root
-
-    # Automatically inserts implicit HTML tags based on the current open tags and the next expected tag.
-    # Ensures essential structure elements like <html>, <head>, and <body> are added if not present,
-    # maintaining valid HTML document structure while parsing.
     def implicit_tags(self, tag):
         while True:
             open_tags = [node.tag for node in self.unfinished]
             if open_tags == [] and tag != "html":
                 self.add_tag("html")
-            elif open_tags == ["html"] and tag not in ["head", "body", "/html"]:
+            elif open_tags == ["html"] \
+                 and tag not in ["head", "body", "/html"]:
                 if tag in self.HEAD_TAGS:
                     self.add_tag("head")
                 else:
                     self.add_tag("body")
-            elif open_tags == ["html", "head"] and tag not in ["/head"] + self.HEAD_TAGS:
+            elif open_tags == ["html", "head"] and \
+                 tag not in ["/head"] + self.HEAD_TAGS:
                 self.add_tag("/head")
-            elif open_tags == ["html", "body"] and tag != "/body":
-                self.add_tag("/body")
             else:
                 break
+
+    def finish(self):
+        if not self.unfinished:
+            self.implicit_tags(None)
+        while len(self.unfinished) > 1:
+            node = self.unfinished.pop()
+            parent = self.unfinished[-1]
+            parent.children.append(node)
+        return self.unfinished.pop()
 
 #CSS PARSING
 class CSSParser:
@@ -294,7 +279,6 @@ class CSSParser:
         val = self.word()
         return prop.casefold(), val
 
-    #This function skips over unwanted or unparseable text until it encounters a specific set of characters or reaches the end of the string.
     def ignore_until(self, chars):
         while self.i < len(self.s):
             if self.s[self.i] in chars:
@@ -303,7 +287,6 @@ class CSSParser:
                 self.i += 1
         return None
 
-    #The body function is responsible for parsing a sequence of CSS declarations (property-value pairs) in a CSS block.
     def body(self):
         pairs = {}
         while self.i < len(self.s) and self.s[self.i] != "}":

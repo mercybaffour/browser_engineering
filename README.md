@@ -1,7 +1,9 @@
 
 # Web Browser Project - Work in Progress
 
-Welcome to my Web Browser Project! This is an ongoing learning journey where I am building a web browser from scratch to explore and understand the inner workings of modern web browsers. 
+Welcome to my Web Browser Project! This is an ongoing learning journey where I am building a web browser from scratch to explore and understand the inner workings of modern web browsers.
+
+![Screenshot of the Browser](browser.png "Web Browser Screenshot")
 
 ### **Project Overview**
 The primary goal of this project is to dive deep into the core components that make up a web browser. Through this project, I am teaching myself the internals of web browsers, including HTML rendering, CSS parsing, JavaScript execution, and the overall browser architecture.
@@ -19,14 +21,18 @@ This project currently includes the following features:
 
 ### **Areas for Improvement**
 While the project has made significant progress, there are a few areas still under development:
-- **Layout Issue**: Currently, new block elements fail to create new lines and instead stretch across the width of the page. This may be due to how the layout algorithm handles block-level elements. I'm investigating the behavior of the layout engine to fix this issue.
+- **Form Rendering Issue**: Forms aren’t showing up correctly—instead of seeing input fields and buttons, the browser just spits out the raw HTML for the form. This could be an issue with the HTML parsing or how forms are processed in general.
+- **Heading Styling**: Headings (<h1>, <h2>, etc.) don’t look like headings. They aren’t bold, and their font sizes aren’t bigger. I’m not sure if this is because the HTML parser isn’t recognizing them properly or if the CSS parser isn’t applying styles correctly.
+- **CSS Improvements**: The browser doesn’t handle much CSS right now, so improving how it parses and applies styles is definitely on my to-do list.
+
 
 ### **Future Goals**
-- Improve block element layout handling to ensure proper line breaks and spacing.
+- Support for Forms
+- Style Headings Properly
+- Better CSS Support
 - Enhance JavaScript execution capabilities.
-- Optimize browser performance and support more complex web features.
+
 
 ---
 
 > **Note**: This project is a work-in-progress and is being updated as I continue to learn and develop more browser components.
-
