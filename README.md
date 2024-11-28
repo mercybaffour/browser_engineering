@@ -22,7 +22,7 @@ This project currently includes the following features:
 ### **Areas for Improvement**
 While the project has made significant progress, there are a few areas still under development:
 - **Form Rendering Issue**: Forms aren’t showing up correctly—instead of seeing input fields and buttons, the browser just spits out the raw HTML for the form. This could be an issue with the HTML parsing or how forms are processed in general.
-- **Heading Styling**: Headings (<h1>, <h2>, etc.) don’t look like headings. They aren’t bold, and their font sizes aren’t bigger. I’m not sure if this is because the HTML parser isn’t recognizing them properly or if the CSS parser isn’t applying styles correctly.
+- **Heading Styling**: Headings (h1, h2, etc.) don’t look like headings. They aren’t bold, and their font sizes aren’t bigger. I’m not sure if this is because the HTML parser isn’t recognizing them properly or if the CSS parser isn’t applying styles correctly.
 - **CSS Improvements**: The browser doesn’t handle much CSS right now, so improving how it parses and applies styles is definitely on my to-do list.
 
 
